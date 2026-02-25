@@ -1,11 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User, Settings } from 'lucide-react';
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const pathname = usePathname();
+
+  // Rutas donde se oculta la navegación (solo se muestra el logo)
+  const hideNav = pathname === '/registro-evento';
 
   const handleLogout = () => {
     logout();
@@ -25,7 +30,7 @@ export default function Header() {
             </Link>
           
           <nav className="hidden md:flex space-x-4">
-            {user ? (
+            {hideNav ? null : user ? (
               <div className="flex items-center space-x-3">
                 <Link 
                   href="/dashboard"

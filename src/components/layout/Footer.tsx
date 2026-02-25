@@ -1,4 +1,13 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Ocultar footer en rutas específicas
+  if (pathname === '/registro-evento') return null;
+
   return (
     <footer className="bg-gray-800 text-white">
       <div className="max-w-6xl mx-auto px-6 py-12">
