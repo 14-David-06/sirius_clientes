@@ -12,7 +12,7 @@ Sistema completo de gestión para Sirius Regenerative Solutions S.A.S ZOMAC, emp
 - **Componentes reutilizables**: Arquitectura modular y escalable
 
 ## 🛠️ Stack Tecnológico
-
+  
 - **Framework**: Next.js 14 (App Router)
 - **Lenguaje**: TypeScript
 - **Estilos**: Tailwind CSS
