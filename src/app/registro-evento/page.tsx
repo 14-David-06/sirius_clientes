@@ -74,6 +74,17 @@ function SignaturePad({ onChange }: SignaturePadProps) {
     }
   }, [onChange]);
 
+  // Fill canvas white on mount so it's not transparent/black on mobile
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -103,6 +114,8 @@ function SignaturePad({ onChange }: SignaturePadProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
     onChange(null);
   };
