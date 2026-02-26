@@ -15,6 +15,19 @@ function SignaturePad({ onChange }: SignaturePadProps) {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
 
+  // Helper to fill canvas with white background
+  const fillWhite = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }, []);
+
   // Fix: scale mouse/touch coordinates to match the internal canvas resolution
   const getPos = (e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -77,6 +90,7 @@ function SignaturePad({ onChange }: SignaturePadProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    fillWhite();
 
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
@@ -95,7 +109,7 @@ function SignaturePad({ onChange }: SignaturePadProps) {
       canvas.removeEventListener('touchmove', draw);
       canvas.removeEventListener('touchend', stopDrawing);
     };
-  }, [startDrawing, draw, stopDrawing]);
+  }, [startDrawing, draw, stopDrawing, fillWhite]);
 
   const clear = () => {
     const canvas = canvasRef.current;
@@ -103,6 +117,7 @@ function SignaturePad({ onChange }: SignaturePadProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    fillWhite();
     setHasSignature(false);
     onChange(null);
   };
@@ -211,7 +226,9 @@ export default function RegistroEventoPage() {
     recognition.continuous = true;
     recognition.interimResults = true;
 
+    // Reiniciar transcript acumulado en cada start
     let finalTranscript = '';
+    setVoiceTranscript('');
 
     recognition.onresult = (event: any) => {
       let interim = '';
@@ -235,6 +252,9 @@ export default function RegistroEventoPage() {
     recognition.onend = () => {
       // Auto-restart to keep listening longer (browser cuts off ~60s)
       if (isListeningRef.current && recognitionRef.current) {
+        // Limpiar transcript acumulado para evitar eco
+        finalTranscript = '';
+        setVoiceTranscript('');
         try {
           recognitionRef.current.start();
           return;
@@ -243,6 +263,7 @@ export default function RegistroEventoPage() {
         }
       }
       setIsListening(false);
+      // No enviar texto repetido
       if (finalTranscript.trim()) {
         processTranscript(finalTranscript.trim());
       }
@@ -252,7 +273,6 @@ export default function RegistroEventoPage() {
     recognition.start();
     setIsListening(true);
     isListeningRef.current = true;
-    setVoiceTranscript('');
   }, [speechSupported]);
 
   const stopListening = useCallback(() => {
