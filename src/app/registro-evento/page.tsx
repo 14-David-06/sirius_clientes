@@ -15,19 +15,6 @@ function SignaturePad({ onChange }: SignaturePadProps) {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
 
-  // Helper to fill canvas with white background
-  const fillWhite = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.save();
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-  }, []);
-
   // Fix: scale mouse/touch coordinates to match the internal canvas resolution
   const getPos = (e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -90,7 +77,6 @@ function SignaturePad({ onChange }: SignaturePadProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    fillWhite();
 
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
@@ -109,7 +95,7 @@ function SignaturePad({ onChange }: SignaturePadProps) {
       canvas.removeEventListener('touchmove', draw);
       canvas.removeEventListener('touchend', stopDrawing);
     };
-  }, [startDrawing, draw, stopDrawing, fillWhite]);
+  }, [startDrawing, draw, stopDrawing]);
 
   const clear = () => {
     const canvas = canvasRef.current;
@@ -117,7 +103,6 @@ function SignaturePad({ onChange }: SignaturePadProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    fillWhite();
     setHasSignature(false);
     onChange(null);
   };
@@ -127,12 +112,12 @@ function SignaturePad({ onChange }: SignaturePadProps) {
       <label className="block text-sm font-medium text-white text-opacity-90 mb-2">
         Firma digital <span className="text-red-400">*</span>
       </label>
-      <div className="relative border-2 border-dashed border-white border-opacity-30 rounded-lg bg-white bg-opacity-90 hover:border-green-400 transition-colors">
+      <div className="relative border-2 border-dashed border-white border-opacity-30 rounded-lg bg-white hover:border-green-400 transition-colors">
         <canvas
           ref={canvasRef}
           width={600}
           height={180}
-          className="w-full h-[180px] rounded-lg cursor-crosshair touch-none"
+          className="w-full h-[180px] rounded-lg cursor-crosshair touch-none bg-white"
         />
         {!hasSignature && (
           <p className="absolute inset-0 flex items-center justify-center text-sm text-gray-400 pointer-events-none">
@@ -226,9 +211,7 @@ export default function RegistroEventoPage() {
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    // Reiniciar transcript acumulado en cada start
     let finalTranscript = '';
-    setVoiceTranscript('');
 
     recognition.onresult = (event: any) => {
       let interim = '';
@@ -252,9 +235,6 @@ export default function RegistroEventoPage() {
     recognition.onend = () => {
       // Auto-restart to keep listening longer (browser cuts off ~60s)
       if (isListeningRef.current && recognitionRef.current) {
-        // Limpiar transcript acumulado para evitar eco
-        finalTranscript = '';
-        setVoiceTranscript('');
         try {
           recognitionRef.current.start();
           return;
@@ -263,7 +243,6 @@ export default function RegistroEventoPage() {
         }
       }
       setIsListening(false);
-      // No enviar texto repetido
       if (finalTranscript.trim()) {
         processTranscript(finalTranscript.trim());
       }
@@ -273,6 +252,7 @@ export default function RegistroEventoPage() {
     recognition.start();
     setIsListening(true);
     isListeningRef.current = true;
+    setVoiceTranscript('');
   }, [speechSupported]);
 
   const stopListening = useCallback(() => {
@@ -496,14 +476,11 @@ export default function RegistroEventoPage() {
                   <p className="text-yellow-300 text-xs">⚠️ Su navegador no soporta reconocimiento de voz.</p>
                 )}
               </div>
-              {/* Live transcript */}
-              {(isListening || voiceTranscript) && (
-                <div className="mt-3 bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg p-3">
-                  <p className="text-xs text-green-300 font-medium mb-1">Transcripción:</p>
-                  <p className="text-white text-opacity-80 text-sm italic">
-                    {voiceTranscript || 'Escuchando...'}
-                    {isListening && <span className="animate-pulse ml-1">●</span>}
-                  </p>
+              {/* Listening indicator */}
+              {isListening && (
+                <div className="mt-3 bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg p-3 flex items-center gap-2">
+                  <span className="animate-pulse text-green-400 text-lg">●</span>
+                  <p className="text-white text-opacity-90 text-sm font-medium">Escuchando...</p>
                 </div>
               )}
             </section>
